@@ -35,7 +35,7 @@ def read_lit_json(filename):
             sys.stderr.write("Error: Multiple tests with name '%s'\n" % name)
             sys.exit(1)
         if "metrics" not in test:
-            print("Warning: '%s' has no metrics, skipping!" % test['name'])
+            # print("Warning: '%s' has no metrics, skipping!" % test['name'])
             continue
         names.add(name)
         for name in test["metrics"].keys():
@@ -145,7 +145,7 @@ def add_geomean_row(metrics, data, dataout):
         # Avoid infinite values in the diff and instead use NaN, as otherwise
         # the computation of the geometric mean will fail.
         values0 = values0.replace({0: float('NaN')})
-        relative = values1 / values0
+        relative = (values1 / values0)
         gm_diff = stats.gmean(relative.dropna()) - 1.0
         gm[(metric, 'diff')] = gm_diff
     gm.Program = GEOMEAN_ROW
@@ -154,7 +154,7 @@ def add_geomean_row(metrics, data, dataout):
 def filter_failed(data, key='Exec'):
     return data.loc[data[key] == "pass"]
 
-def filter_short(data, key='Exec_Time', threshold=0.6):
+def filter_short(data, key='Exec_Time', threshold=0.005):
     return data.loc[data[key] >= threshold]
 
 def filter_same_hash(data, key='hash'):
@@ -210,7 +210,7 @@ def determine_common_prefix_suffix(names, min_len=8):
 
 def format_relative_diff(value):
     if not isinstance(value, numbers.Integral):
-        return "%4.1f%%" % (value * 100.)
+        return "%6.4f%%" % (value * 100.)
     else:
         return "%-5d" % value
 
@@ -233,7 +233,7 @@ def print_result(d, limit_output=True, shorten_names=True, minimal_names=False,
     dataout = d
     if limit_output:
         # Take 15 topmost elements
-        dataout = dataout.head(15)
+        dataout = dataout.head(20)
 
     formatters = dict()
     if not absolute_diff:
@@ -246,7 +246,7 @@ def print_result(d, limit_output=True, shorten_names=True, minimal_names=False,
             name = name[common_prefix:]
             if common_suffix > 0:
                 name = name[:-common_suffix]
-            return "%-45s" % truncate(name, 10, 30)
+            return "%-45s" % truncate(name, 30, 40)
 
 
         def strip_name_fully(name):
@@ -269,10 +269,11 @@ def print_result(d, limit_output=True, shorten_names=True, minimal_names=False,
         # geometric mean only makes sense for relative differences.
         dataout = add_geomean_row(metrics, d, dataout)
 
+
     def float_format(x):
         if x == '':
             return ''
-        return "%6.2f" % (x,)
+        return "%6.4f" % (x,)
 
     pd.set_option("display.max_colwidth", 0)
     pd.set_option('display.width', 0)
